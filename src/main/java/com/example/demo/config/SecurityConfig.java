@@ -40,7 +40,7 @@ public class SecurityConfig {
         http.httpBasic(AbstractHttpConfigurer::disable);
 
         http.authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/users/register", "/users/login").permitAll()
+                        .requestMatchers("/users/verify-code-register", "/users/login", "/users/send-verification-code").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // JWT 필터 추가

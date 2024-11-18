@@ -2,10 +2,16 @@ package com.example.demo.service;
 
 import com.example.demo.dto.UserDTO;
 import com.example.demo.entity.UserEntity;
+import com.example.demo.entity.VerificationCodeEntity;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.VerificationCodeRepository;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -14,6 +20,10 @@ public class UserService {
     private final UserRepository userRepository;
     //비밀번호 암호화
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    //메일 전송
+    private final JavaMailSender mailSender;
+    private final VerificationCodeRepository verificationCodeRepository;
 
 //    public UserService(UserRepository userRepository) {
 //        this.userRepository = userRepository;
@@ -64,5 +74,31 @@ public class UserService {
     // 사용자 검색 메서드
     public Optional<UserEntity> findByUserEmail(String userEmail) {
         return userRepository.findByUserEmail(userEmail);
+    }
+
+    public void sendVerificationCode(String email) {
+        // 인증번호 생성 (6자리 숫자)
+        String verificationCode = String.valueOf((int)((Math.random() * 900000) + 100000));
+        // 인증번호 저장 (일정 시간 동안 유효)
+        VerificationCodeEntity verificationCodeEntity = new VerificationCodeEntity(email, verificationCode, new Date(System.currentTimeMillis() + 5 * 60 * 1000)); // 5분 유효
+        verificationCodeRepository.save(verificationCodeEntity);
+
+        // 이메일 전송
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(email);
+        mailMessage.setSubject("이메일 인증 요청");
+        mailMessage.setText("인증번호: " + verificationCode);
+        mailSender.send(mailMessage);
+    }
+
+    public boolean verifyCode(String email, String code) {
+        Optional<VerificationCodeEntity> verificationCode = verificationCodeRepository.findByEmailAndCode(email, code);
+
+        if(verificationCode.isPresent() && verificationCode.get().getExpiryDate().after(new Date())) {
+            // 인증 성공 후 VerificationCode 삭재 (재사용 방지)
+            verificationCodeRepository.delete(verificationCode.get());
+            return true;
+        }
+        return false;
     }
 }
