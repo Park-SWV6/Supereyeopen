@@ -79,6 +79,12 @@ public class UserService {
     public void sendVerificationCode(String email) {
         // 인증번호 생성 (6자리 숫자)
         String verificationCode = String.valueOf((int)((Math.random() * 900000) + 100000));
+
+
+        // 기존에 해당 이메일로 저장된 인증번호가 있는지 확인하고 삭제
+        Optional<VerificationCodeEntity> existingVerificationCode = verificationCodeRepository.findByEmail(email);
+        existingVerificationCode.ifPresent(verificationCodeRepository::delete);
+
         // 인증번호 저장 (일정 시간 동안 유효)
         VerificationCodeEntity verificationCodeEntity = new VerificationCodeEntity(email, verificationCode, new Date(System.currentTimeMillis() + 5 * 60 * 1000)); // 5분 유효
         verificationCodeRepository.save(verificationCodeEntity);
