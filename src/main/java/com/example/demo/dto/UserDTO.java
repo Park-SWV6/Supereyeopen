@@ -12,6 +12,7 @@ public class UserDTO {
     private String userName;
     private String profileImageUri;
     private Long studyGroupId;
+    private String studyGroupName;
     private int studyTime;
     private int helpGivenCount;
     private int helpReceivedCount;
@@ -25,6 +26,7 @@ public class UserDTO {
         // studyGroup 정보가 존재할 경우 studyGroupId 초기화
         if (user.getStudyGroup() != null) {
             this.studyGroupId = user.getStudyGroup().getId();
+            this.studyGroupName = user.getStudyGroup().getName();
         }
 
         this.studyTime = user.getStudyTime();
