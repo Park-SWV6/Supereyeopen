@@ -74,6 +74,7 @@ public class HelpRequestService {
         dto.setDate(entity.getDate());
         dto.setComments(entity.getComments());
         dto.setUri(entity.getUri());
+
         UserEntity user = entity.getUser();
         dto.setUserId(user.getId());
         dto.setUserName(user.getUserName());
