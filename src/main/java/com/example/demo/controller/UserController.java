@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 //import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -60,12 +61,20 @@ public class UserController {
         }
 
         String token = jwtUtil.generateToken(user.getUserEmail());
-        return ResponseEntity.ok(token); // 토큰 문자열만 반환
+
+        // UserEntity -> UserDTO 변환
+        UserDTO responseUser = UserService.mapToUserDTO(user);
+
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("user", responseUser);
+        return ResponseEntity.ok(response); // 토큰 문자열과 사용자 정보 반환
     }
 
     // 프론트 토큰 검즘 API
     @PostMapping("/validate")
-    public ResponseEntity<String> validateToken(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body("Authorization header is missing or invalid");
         }
@@ -77,7 +86,15 @@ public class UserController {
             // 토큰 검증
             if(isValid) {
                 String email = jwtUtil.extractEmail(token);
-                return ResponseEntity.ok("Token is valid for email: " + email);
+                Optional<UserEntity> userOptional = userService.findByUserEmail(email);
+
+                if(userOptional.isPresent())
+                {
+                    UserEntity user = userOptional.get();
+                    return ResponseEntity.ok(user);
+                } else {
+                    return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
+                }
             } else {
                 return ResponseEntity.status(401).body("Invalid or expired token");
             }
@@ -96,6 +113,29 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("인증번호 발송에 실패했습니다.");
         }
+    }
+
+    @PutMapping("/{id}/study-time")
+    public ResponseEntity<?> updateStudyTime(@PathVariable Long id, @RequestBody Map<String, Integer> request) {
+        int studyTime = request.get("studyTime");
+
+        // 사용자 검색
+        Optional<UserEntity> userOptional = userService.findById(id);
+        if (userOptional.isPresent()) {
+            UserEntity user = userOptional.get();
+            user.setStudyTime(studyTime);
+            userService.save(user); // 사용자 정보 업데이트
+            return ResponseEntity.ok("Study time updated successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+        }
+    }
+
+    @GetMapping("/{id}/study-time")
+    public ResponseEntity<Integer> getUserStudyTime(@PathVariable Long id) {
+        Optional<UserEntity> userOptional = userService.findById(id);
+        // 사용자 없음 처리
+        return userOptional.map(userEntity -> ResponseEntity.ok(userEntity.getStudyTime())).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(0));
     }
 
 //    @GetMapping("/save-form")

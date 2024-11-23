@@ -1,10 +1,18 @@
 package com.example.demo.entity;
 
 import com.example.demo.dto.UserDTO;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @Entity
 @Getter @Setter
 @Table(name="user_table")
@@ -26,8 +34,10 @@ public class UserEntity {
     @Column(nullable = true)
     private String profileImageUri; // 프로필 이미지 URL
 
-    @Column(nullable = true)
-    private Long studyGroupId; // Foreign Key
+    @ManyToOne
+    @JoinColumn(name = "study_group_id")
+    @JsonBackReference
+    private StudyGroupEntity studyGroup; // Foreign Key
 
     @Column(nullable = false)
     private int studyTime;
@@ -37,6 +47,14 @@ public class UserEntity {
 
     @Column(nullable = false)
     private int helpReceivedCount;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<SubjectEntity> subjects; // 사용자와 연결된 과목 리스트
+
+    public Long getStudyGroupId() {
+        return this.studyGroup != null ? this.studyGroup.getId() : null;
+    }
 
 //    @Column
 //    private int memberAge;
