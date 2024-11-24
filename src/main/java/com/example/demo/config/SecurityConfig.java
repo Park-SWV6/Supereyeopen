@@ -40,13 +40,22 @@ public class SecurityConfig {
         http.httpBasic(AbstractHttpConfigurer::disable);
 
         http.authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/users/verify-code-register", "/users/login", "/users/send-verification-code").permitAll()
+                        .requestMatchers(
+                                "/users/verify-code-register",
+                                "/users/login",
+                                "/users/send-verification-code",
+                                "/uploads/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // JWT 필터 추가
-
+                );
+        // JWT 필터 추가
+        http.addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class
+        );
         http.sessionManagement((session) -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
         return http.build();
     }
 

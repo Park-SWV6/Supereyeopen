@@ -1,9 +1,12 @@
 package com.example.demo.util;
 
+import com.example.demo.entity.UserEntity;
+import com.example.demo.repository.UserRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +14,7 @@ import java.security.Key;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
 
     @Value("${jwt.secret}") // application.properties에서 값을 가져옴
@@ -19,6 +23,8 @@ public class JwtUtil {
     private Key signingKey;
 
     private static final long EXPIRATION_TIME = 86400000; // 1일
+
+    private final UserRepository userRepository;
 
     @PostConstruct
     public void init() {
@@ -69,5 +75,12 @@ public class JwtUtil {
             System.out.println("Invalid JWT token: " + e.getMessage());
             return false;
         }
+    }
+
+    // 이메일로 사용자 ID를 조회하는 메서드
+    public Long getUserIdFromEmail(String email) {
+        UserEntity user = userRepository.findByUserEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        return user.getId();
     }
 }
