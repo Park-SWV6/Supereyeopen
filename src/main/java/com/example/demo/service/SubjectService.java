@@ -28,13 +28,6 @@ public class SubjectService {
                 .orElseThrow(() -> new IllegalArgumentException("Subject not found with ID: " + subjectId));
 
         subject.setTime(subject.getTime() + elapsedSeconds);
-        SubjectEntity updatedSubject = subjectRepository.save(subject);
-
-        // 사용자 총 공부 시간 업데이트
-        UserEntity user = subject.getUser();
-        user.setStudyTime(user.getStudyTime() + elapsedSeconds); // 초 단위 누적
-        userService.save(user);
-
         return subjectRepository.save(subject);
     }
 
@@ -47,6 +40,16 @@ public class SubjectService {
     }
 
     public void deleteSubjectById(Long id) {
-        subjectRepository.deleteById(id);
+        SubjectEntity subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Subject not found with ID: " + id));
+
+        // 사용자 총 공부 시간 업데이트
+        UserEntity user = subject.getUser();
+        int subjectTime = subject.getTime(); // 삭제된 과목의 시간
+        user.setStudyTime(user.getStudyTime() - subjectTime); // 총 공부 시간에서 차감
+        userService.save(user);
+
+        subjectRepository.delete(subject);
+
     }
 }

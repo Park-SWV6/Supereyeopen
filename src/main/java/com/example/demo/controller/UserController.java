@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 //import java.util.Collections;
 import java.util.HashMap;
@@ -136,6 +137,27 @@ public class UserController {
         Optional<UserEntity> userOptional = userService.findById(id);
         // 사용자 없음 처리
         return userOptional.map(userEntity -> ResponseEntity.ok(userEntity.getStudyTime())).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(0));
+    }
+
+    @PostMapping("/upload-profile-image")
+    public ResponseEntity<Map<String, String>> uploadProfileImage(
+            @RequestPart("file") MultipartFile file,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractEmail(token);
+            Long userId = jwtUtil.getUserIdFromEmail(email);
+
+            String filePath = userService.uploadProfileImage(userId, file);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("profileImageUri", filePath);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to upload image: " + e.getMessage()));
+        }
     }
 
 //    @GetMapping("/save-form")

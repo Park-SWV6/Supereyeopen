@@ -13,7 +13,10 @@ import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -98,5 +101,34 @@ public class StudyGroupController {
     public ResponseEntity<List<UserDTO>> getGroupMembers(@PathVariable Long groupId) {
         List<UserDTO> members = studyGroupService.getGroupMembers(groupId);
         return ResponseEntity.ok(members);
+    }
+    /**
+     * 스터디 그룹 이미지 업로드
+     * @param groupId 스터디 그룹 ID
+     * @param file 업로드할 이미지 파일
+     * @param authHeader 인증 헤더 (JWT 토큰)
+     * @return 업로드된 이미지의 URI
+     */
+    @PostMapping("/{groupId}/upload-group-image")
+    public ResponseEntity<Map<String, String>> uploadGroupImage(
+            @PathVariable Long groupId,
+            @RequestPart("file") MultipartFile file,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            String imageUri = studyGroupService.uploadGroupImage(groupId, file);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("imageUri", imageUri);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // 그룹 ID가 잘못된 경우 404 반환
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+
+        } catch (IOException e) {
+            // 파일 업로드 중 문제 발생 시 500 반환
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to upload image: " + e.getMessage()));
+        }
     }
 }

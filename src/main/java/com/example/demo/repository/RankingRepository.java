@@ -18,6 +18,8 @@ public class RankingRepository {
         String query = """
             SELECT new com.example.demo.dto.DailyRankingDTO(
                 u.userName,
+                u.id,
+                u.profileImageUri,
                 u.studyTime,
                 sg.name
             )
@@ -32,7 +34,9 @@ public class RankingRepository {
         String query = """
                 SELECT new com.example.demo.dto.GroupRankingDTO(
                     0,
+                    sg.id,
                     sg.name,
+                    sg.imageUri,
                     SUM(u.studyTime),
                     COUNT(u.id),
                     sg.limit,
@@ -51,6 +55,7 @@ public class RankingRepository {
                 SELECT new com.example.demo.dto.GroupMemberRankingDTO(
                     0,
                     u.userName,
+                    u.profileImageUri,
                     u.studyTime,
                     sg.name
                 )

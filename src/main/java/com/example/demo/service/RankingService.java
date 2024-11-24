@@ -20,10 +20,17 @@ public class RankingService {
 
     public List<DailyRankingDTO> fetchDailyRankingWithRank() {
         List<DailyRankingDTO> rankings = rankingRepository.fetchDailyRankings();
+        // studyTime 내림차순, userId 오름차순 정렬
+        rankings.sort((a, b) -> {
+            if (a.getStudyTime() == b.getStudyTime()) {
+                return Long.compare(a.getUserId(), b.getUserId());
+            }
+            return Long.compare(b.getStudyTime(), a.getStudyTime());
+        });
 
         int rank = 1;
         for (int i = 0; i < rankings.size(); i++) {
-            if (i > 0 && rankings.get(i).getStudyTime() < rankings.get(i - 1).getStudyTime()) {
+            if (i > 0 && rankings.get(i).getStudyTime() != rankings.get(i - 1).getStudyTime()) {
                 rank = i + 1;
             }
             rankings.get(i).setRank(rank);

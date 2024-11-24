@@ -6,16 +6,30 @@ import com.example.demo.entity.StudyGroupEntity;
 import com.example.demo.entity.UserEntity;
 import com.example.demo.repository.StudyGroupRepository;
 import com.example.demo.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class StudyGroupService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
+    private String groupImageDir;
+    @PostConstruct
+    public void init() {
+        this.groupImageDir = uploadDir + "group-images/";
+    }
 
     private final StudyGroupRepository studyGroupRepository;
     private final UserRepository userRepository;
@@ -148,6 +162,33 @@ public class StudyGroupService {
         return group.getMembers().stream()
                 .map(this::mapToUserDTO)
                 .collect(Collectors.toList());
+    }
+
+    // 스터디 그룹 이미지 업로드
+    public String uploadGroupImage(Long groupId, MultipartFile file) throws IOException {
+        StudyGroupEntity group = studyGroupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("StudyGroup not found"));
+
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        File uploadPath = new File(groupImageDir);
+        System.out.println("groupImageDir: " + groupImageDir);
+        System.out.println("uploadPath absolute path: " + uploadPath.getAbsolutePath());
+
+        if(!uploadPath.exists()) {
+            boolean created = uploadPath.mkdirs();
+            if(!created) {
+                System.out.println("Attempting to create directory: " + uploadPath.getAbsolutePath());
+                throw new IOException("Failed to create upload directory: " +  uploadDir);
+            }
+        }
+
+        File destinationFile =  new File(groupImageDir + fileName);
+        file.transferTo(destinationFile);
+
+        group.setImageUri("/uploads/group-images/" + fileName);
+        studyGroupRepository.save(group);
+
+        return group.getImageUri();
     }
 
     public StudyGroupDTO mapToDTO(StudyGroupEntity entity) {

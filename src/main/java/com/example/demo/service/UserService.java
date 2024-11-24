@@ -5,19 +5,31 @@ import com.example.demo.entity.UserEntity;
 import com.example.demo.entity.VerificationCodeEntity;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.VerificationCodeRepository;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
-import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+    private String profileImageDir;
+    @PostConstruct
+    public void init() {
+        this.profileImageDir = uploadDir + "profile-images/";
+    }
     private final UserRepository userRepository;
     //비밀번호 암호화
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -118,6 +130,31 @@ public class UserService {
     // 사용자 저장
     public UserEntity save(UserEntity user) {
         return userRepository.save(user); // JpaRepository의 기본 메서드 호출
+    }
+
+    // 프로필 이미지 업로드
+    public String uploadProfileImage(Long userId, MultipartFile file) throws IOException {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        File uploadPath = new File(profileImageDir);
+
+        if (!uploadPath.exists()) {
+            boolean created = uploadPath.mkdirs(); // 디렉토리 생성
+            if (!created) {
+                throw new IOException("Failed to create upload directory: " + profileImageDir);
+            }
+        }
+
+        File destinationFile = new File(profileImageDir + fileName);
+        file.transferTo(destinationFile);
+
+        // Update user profileImageUri
+        user.setProfileImageUri("/uploads/profile-images/" + fileName);
+        userRepository.save(user);
+
+        return user.getProfileImageUri();
     }
 
     public static UserDTO mapToUserDTO(UserEntity user) {
