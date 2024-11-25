@@ -25,7 +25,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String requestPath = request.getServletPath();
-        if (requestPath.equals("/users/verify-code-register") || requestPath.equals("/users/login") || requestPath.equals("/users/send-verification-code")) {
+        if (requestPath.startsWith("/uploads/") ||
+                requestPath.equals("/users/verify-code-register") ||
+                requestPath.equals("/users/login") ||
+                requestPath.equals("/users/send-verification-code")) {
             filterChain.doFilter(request, response);
             return;
         }

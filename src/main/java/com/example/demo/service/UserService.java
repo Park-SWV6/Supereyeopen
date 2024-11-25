@@ -5,18 +5,31 @@ import com.example.demo.entity.UserEntity;
 import com.example.demo.entity.VerificationCodeEntity;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.VerificationCodeRepository;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+    private String profileImageDir;
+    @PostConstruct
+    public void init() {
+        this.profileImageDir = uploadDir + "profile-images/";
+    }
     private final UserRepository userRepository;
     //비밀번호 암호화
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -43,9 +56,23 @@ public class UserService {
         if (userRepository.findByUserName(userDTO.getUserName()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 사용자 이름입니다.");
         }
-        UserEntity userEntity = toSaveEntity(userDTO);
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUserEmail(userDTO.getUserEmail());
+        userEntity.setUserPassword(bCryptPasswordEncoder.encode(userDTO.getUserPassword()));
+        userEntity.setUserName(userDTO.getUserName());
+        userEntity.setProfileImageUri(null);
+        userEntity.setStudyTime(0);
+        userEntity.setHelpGivenCount(0);
+        userEntity.setHelpReceivedCount(0);
+
         UserEntity savedUser = userRepository.save(userEntity);
         return savedUser.getId();
+    }
+
+    public UserDTO getUserById(Long id) {
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return mapToUserDTO(user);
     }
 
     public UserEntity loginUser(String userEmail, String userPassword) {
@@ -58,18 +85,6 @@ public class UserService {
         return userOptional.get();
     }
 
-    private UserEntity toSaveEntity(UserDTO userDTO) {
-        UserEntity userEntity = new UserEntity();
-        userEntity.setUserEmail(userDTO.getUserEmail());
-        userEntity.setUserPassword(bCryptPasswordEncoder.encode(userDTO.getUserPassword()));
-        userEntity.setUserName(userDTO.getUserName());
-        userEntity.setProfileImageUri(null); // 초기엔 없음
-        userEntity.setStudyGroupId(null); // 초기엔 없음
-        userEntity.setStudyTime(0); // 최초엔 0
-        userEntity.setHelpGivenCount(0);
-        userEntity.setHelpReceivedCount(0);
-        return userEntity;
-    }
 
     // 사용자 검색 메서드
     public Optional<UserEntity> findByUserEmail(String userEmail) {
@@ -107,4 +122,52 @@ public class UserService {
         }
         return false;
     }
+    // 사용자 ID로 조회
+    public Optional<UserEntity> findById(Long id) {
+        return userRepository.findById(id); // JpaRepository의 기본 메서드 호출
+    }
+
+    // 사용자 저장
+    public UserEntity save(UserEntity user) {
+        return userRepository.save(user); // JpaRepository의 기본 메서드 호출
+    }
+
+    // 프로필 이미지 업로드
+    public String uploadProfileImage(Long userId, MultipartFile file) throws IOException {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        File uploadPath = new File(profileImageDir);
+
+        if (!uploadPath.exists()) {
+            boolean created = uploadPath.mkdirs(); // 디렉토리 생성
+            if (!created) {
+                throw new IOException("Failed to create upload directory: " + profileImageDir);
+            }
+        }
+
+        File destinationFile = new File(profileImageDir + fileName);
+        file.transferTo(destinationFile);
+
+        // Update user profileImageUri
+        user.setProfileImageUri("/uploads/profile-images/" + fileName);
+        userRepository.save(user);
+
+        return user.getProfileImageUri();
+    }
+
+    public static UserDTO mapToUserDTO(UserEntity user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setUserEmail(user.getUserEmail());
+        dto.setUserName(user.getUserName());
+        dto.setProfileImageUri(user.getProfileImageUri());
+        dto.setStudyGroupId(user.getStudyGroup() != null ? user.getStudyGroup().getId() : null);
+        dto.setStudyTime(user.getStudyTime());
+        dto.setHelpGivenCount(user.getHelpGivenCount());
+        dto.setHelpReceivedCount(user.getHelpReceivedCount());
+        return dto;
+    }
+
 }
