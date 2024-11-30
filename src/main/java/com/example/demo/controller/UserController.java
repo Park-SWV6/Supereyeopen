@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.UserDTO;
+import com.example.demo.entity.NotificationEntity;
 import com.example.demo.entity.UserEntity;
+import com.example.demo.service.NotificationService;
 import com.example.demo.service.UserService;
 import com.example.demo.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final NotificationService notificationService;
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 //    public UserController(UserService userService) {
@@ -31,7 +34,11 @@ public class UserController {
 
     // 회원가입 API
     @PostMapping("/verify-code-register")
-    public ResponseEntity<String> verifyCodeAndRegister(@RequestBody UserDTO userDTO, @RequestParam String verificationCode) {
+    public ResponseEntity<String> verifyCodeAndRegister(
+            @RequestBody UserDTO userDTO,
+            @RequestParam String verificationCode,
+            @RequestParam String receivedAt
+    ) {
         try {
             // 인증번호 검증
             boolean isVerified = userService.verifyCode(userDTO.getUserEmail(), verificationCode);
@@ -41,6 +48,17 @@ public class UserController {
 
             // 인증번호가 유효하면 회원가입 진행
             Long userId = userService.registerUser(userDTO);
+
+            // 회원가입 성공 후 알림 생성 (타입: WELCOME)
+            notificationService.createNotification(
+                    userId,
+                    "System",
+                    "회원가입",
+                    "회원가입을 축하드립니다!",
+                    "WELCOME",
+                    -1L,
+                    receivedAt
+            );
             return new ResponseEntity<>("사용자가 성공적으로 등록되었습니다. ID: " + userId, HttpStatus.CREATED);
         } catch(Exception e) {
             return new ResponseEntity<>("사용자 등록 실패: " + e.getMessage(), HttpStatus.BAD_REQUEST);
