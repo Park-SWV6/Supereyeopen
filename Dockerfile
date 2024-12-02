@@ -4,11 +4,17 @@ FROM eclipse-temurin:17-jdk
 # Set working directory in the container
 WORKDIR /app
 
-# Copy the built JAR file into the container
-COPY build/libs/*.jar app.jar
+# Copy Gradle wrapper and source code
+COPY . .
 
-# Expose the application port (default Spring Boot port)
-EXPOSE 8080
+# Run Gradle build to generate JAR file
+RUN ./gradlew build --no-daemon
 
-# Start the Spring Boot application
+# Copy the generated JAR file to the container
+RUN cp build/libs/*.jar app.jar
+
+# Expose the application port
+EXPOSE 8082
+
+# Start the application
 CMD ["java", "-jar", "app.jar"]
