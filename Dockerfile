@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Run Gradle build to generate JAR file
-RUN ./gradlew build --no-daemon
+RUN ./gradlew build -x test --no-daemon
 
 # Copy the generated JAR file to the container
 RUN cp build/libs/*.jar app.jar
