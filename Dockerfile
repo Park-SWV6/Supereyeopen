@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy Gradle wrapper and source code
 COPY . .
 
+# Ensure gradlew has execute permissions
+RUN chmod +x gradlew
+
 # Run Gradle build to generate JAR file
 RUN ./gradlew build -x test --no-daemon
 
