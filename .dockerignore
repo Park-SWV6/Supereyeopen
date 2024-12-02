@@ -1,0 +1,7 @@
+# Ignore Gradle build files and temporary files
+.gradle/
+build/
+out/
+!build/libs/*.jar
+*.log
+*.tmp
