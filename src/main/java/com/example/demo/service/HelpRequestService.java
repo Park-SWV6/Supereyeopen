@@ -3,9 +3,11 @@ package com.example.demo.service;
 import com.example.demo.dto.HelpRequestDTO;
 import com.example.demo.entity.HelpRequestEntity;
 import com.example.demo.entity.UserEntity;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.HelpRequestRepository;
 import com.example.demo.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class HelpRequestService {
     }
     private final HelpRequestRepository helpRequestRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
 
 
     public List<HelpRequestDTO> getAllHelpRequests() {
@@ -73,7 +76,11 @@ public class HelpRequestService {
         return mapToDTO(updatedEntity);
     }
 
+    @Transactional
     public void deleteHelpRequest(Long id) {
+        // 댓글 먼저 삭제
+        commentRepository.deleteByPostId(id);
+
         HelpRequestEntity entity = helpRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("게시물을 찾을 수 없습니다: " + id));
 

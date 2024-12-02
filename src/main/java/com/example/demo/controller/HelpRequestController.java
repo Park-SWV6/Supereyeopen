@@ -3,6 +3,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.HelpRequestDTO;
 import com.example.demo.entity.HelpRequestEntity;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.service.HelpRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

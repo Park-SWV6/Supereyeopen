@@ -26,7 +26,8 @@ public class MentorRelationshipController {
             Long senderId = Long.valueOf(request.get("senderId"));
             String senderName = request.get("senderName");
             Long receiverId = Long.valueOf(request.get("receiverId"));
-            String message = mentorRelationshipService.requestMentor(senderId, senderName, receiverId);
+            String receivedAt = request.get("receivedAt");
+            String message = mentorRelationshipService.requestMentor(senderId, senderName, receiverId, receivedAt);
             return ResponseEntity.ok(message);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -92,5 +93,11 @@ public class MentorRelationshipController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
         }
+    }
+
+    @DeleteMapping("/{relationshipId}/end")
+    public ResponseEntity<Void> endMentoring(@PathVariable Long relationshipId, @RequestBody Map<String ,String> request) {
+        mentorRelationshipService.endMentoring(relationshipId, request.get("receivedAt"));
+        return ResponseEntity.ok().build();
     }
 }

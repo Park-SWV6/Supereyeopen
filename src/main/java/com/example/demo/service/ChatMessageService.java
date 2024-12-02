@@ -32,7 +32,7 @@ public class ChatMessageService {
     }
 
     // 메시지 전송
-    public ChatMessageEntity sendMessage(Long chatRoomId, Long senderId, String content, String timestamp) {
+    public ChatMessageEntity sendMessage(Long chatRoomId, Long senderId, Long recipientId, String content, String timestamp) {
         ChatRoomEntity chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
         UserEntity sender = userRepository.findById(senderId)
@@ -43,9 +43,28 @@ public class ChatMessageService {
         message.setSender(sender);
         message.setContent(content);
         message.setTimestamp(timestamp);
+        message.setRecipient(userRepository.findById(recipientId)
+                .orElseThrow(() -> new IllegalArgumentException("수신자를 찾을 수 없습니다.")));
 
         return chatMessageRepository.save(message);
     }
 
+    // 읽지 않은 메시지 수 반환
+    public int getUnreadMessageCount(Long chatRoomId, Long userId) {
+        return chatMessageRepository.countUnreadMessages(chatRoomId, userId);
+    }
 
+    // 특정 채팅방의 모든 메시지 가져오기
+    public List<ChatMessageEntity> getMessages(Long chatRoomId, Long userId) {
+        List<ChatMessageEntity> messages = chatMessageRepository.findByChatRoomId(chatRoomId);
+
+        // 사용자가 읽지 않은 메시지를 읽음 처리
+        for (ChatMessageEntity message : messages) {
+            if (!message.isRead() && message.getRecipient().getId().equals(userId)) {
+                message.setRead(true); // 읽음 처리
+            }
+        }
+        chatMessageRepository.saveAll(messages); // 읽음 상태 저장
+        return messages;
+    }
 }

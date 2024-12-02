@@ -21,9 +21,16 @@ public class ChatMessageEntity {
     @JoinColumn(name = "sender_id", nullable = false) // 보낸 사람
     private UserEntity sender; // senderId 대신 UserEntity 사용
 
+    @ManyToOne
+    @JoinColumn(name = "recipient_id", nullable = true) // 필요시 수신자 설정
+    private UserEntity recipient;
+
     @Column(nullable = false)
     private String content; // 메시지 내용
 
     @Column(nullable = false)
     private String timestamp;
+
+    @Column(nullable = false)
+    private boolean  isRead = false;
 }

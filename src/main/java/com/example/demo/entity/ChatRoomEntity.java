@@ -23,4 +23,15 @@ public class ChatRoomEntity {
 
     @Column(nullable = false)
     private String createdAt;
+
+    @Column(nullable = true)
+    private String lastMessage;
+
+    @Column(nullable = false)
+    private Long unreadMessages =0L;
+
+    @OneToOne
+    @JoinColumn(name = "mentor_relationship_id", nullable = true)
+    private MentorRelationshipsEntity mentorRelationship;
+
 }

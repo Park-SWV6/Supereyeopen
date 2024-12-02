@@ -62,7 +62,7 @@ public class NotificationService {
     // 알림 이름 설정
     private String resolveNotificationName(String type, String senderName) {
         return switch (type.toUpperCase()) {
-            case "WELCOME", "MENTOR_REQUEST", "MENTOR_REQUEST_ACCEPTED" -> "System"; // 시스템 알림
+            case "WELCOME", "MENTOR_REQUEST", "MENTOR_REQUEST_ACCEPTED", "MENTOR_END" -> "System"; // 시스템 알림
             case "MESSAGE" -> senderName; // 쪽지 알림
             default -> "Unknown"; // 기본값
         };
