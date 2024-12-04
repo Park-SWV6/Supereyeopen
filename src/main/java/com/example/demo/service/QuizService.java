@@ -34,21 +34,35 @@ public class QuizService {
     }
 
     @Transactional
-    public void updateQuizLikes(Long id, List<Long> likes, List<Long> dislikes) {
-        QuizEntity quiz = quizRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found with ID: " + id));
-        quiz.setLikes(likes);
-        quiz.setDislikes(dislikes);
+    public void updateQuizReaction(Long quizId, Long userId, boolean isLike) {
+        QuizEntity quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new IllegalArgumentException("Quiz not found with ID: " + quizId));
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        if (isLike) {
+            if (!quiz.getLikes().contains(user)) {
+                quiz.getLikes().add(user); // 좋아요 추가
+            }
+            quiz.getDislikes().remove(user); // 싫어요 제거
+        } else {
+            if (!quiz.getDislikes().contains(user)) {
+                quiz.getDislikes().add(user); // 싫어요 추가
+            }
+            quiz.getLikes().remove(user); // 좋아요 제거
+        }
+
         quizRepository.save(quiz);
     }
+
 
     private QuizDTO mapToDTO(QuizEntity entity) {
         QuizDTO dto = new QuizDTO();
         dto.setId(entity.getId());
         dto.setQuestion(entity.getQuestion());
         dto.setAnswer(entity.getAnswer());
-        dto.setLikes(entity.getLikes());
-        dto.setDislikes(entity.getDislikes());
+        dto.setLikes(entity.getLikes().stream().map(UserEntity::getId).collect(Collectors.toList()));
+        dto.setDislikes(entity.getDislikes().stream().map(UserEntity::getId).collect(Collectors.toList()));
         dto.setDate(entity.getDate());
 
         UserEntity user = entity.getUser();
@@ -62,9 +76,14 @@ public class QuizService {
         entity.setId(dto.getId());
         entity.setQuestion(dto.getQuestion());
         entity.setAnswer(dto.getAnswer());
-        entity.setLikes(dto.getLikes());
-        entity.setDislikes(dto.getDislikes());
         entity.setDate(dto.getDate());
+        entity.setLikes(dto.getLikes().stream().map(id -> userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id)))
+                .collect(Collectors.toList()));
+        entity.setDislikes(dto.getDislikes().stream().map(id -> userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id)))
+                .collect(Collectors.toList()));
+
         return entity;
     }
 }
