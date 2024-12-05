@@ -23,13 +23,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-    private String profileImageDir;
-    @PostConstruct
-    public void init() {
-        this.profileImageDir = uploadDir + "profile-images/";
-    }
     private final UserRepository userRepository;
     //비밀번호 암호화
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -37,6 +30,9 @@ public class UserService {
     //메일 전송
     private final JavaMailSender mailSender;
     private final VerificationCodeRepository verificationCodeRepository;
+
+    // Google GCS
+    private final GcsService gcsService;
 
 //    public UserService(UserRepository userRepository) {
 //        this.userRepository = userRepository;
@@ -137,21 +133,14 @@ public class UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        // GCS에 업로드할 파일 이름 생성
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        File uploadPath = new File(profileImageDir);
 
-        if (!uploadPath.exists()) {
-            boolean created = uploadPath.mkdirs(); // 디렉토리 생성
-            if (!created) {
-                throw new IOException("Failed to create upload directory: " + profileImageDir);
-            }
-        }
-
-        File destinationFile = new File(profileImageDir + fileName);
-        file.transferTo(destinationFile);
+        // GCS에 파일 업로드
+        String fileUri = gcsService.uploadFile(fileName, file.getBytes());
 
         // Update user profileImageUri
-        user.setProfileImageUri("/uploads/profile-images/" + fileName);
+        user.setProfileImageUri(fileUri);
         userRepository.save(user);
 
         return user.getProfileImageUri();

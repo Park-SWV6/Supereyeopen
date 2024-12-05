@@ -166,6 +166,7 @@ public class UserController {
             String email = jwtUtil.extractEmail(token);
             Long userId = jwtUtil.getUserIdFromEmail(email);
 
+            // GCS에 파일 업로드
             String filePath = userService.uploadProfileImage(userId, file);
 
             Map<String, String> response = new HashMap<>();
