@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
@@ -40,5 +41,14 @@ public class GcsService {
         BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, "profile-images/" + fileName).build();
         storage.create(blobInfo, content);
         return String.format("https://storage.googleapis.com/%s/profile-images/%s", bucketName, fileName);
+    }
+
+    // 파일 삭제 메소드 추가
+    public void deleteFile(String fileName) {
+        BlobId blobId = BlobId.of(bucketName, "help-request-images/" + fileName);
+        boolean deleted = storage.delete(blobId);
+        if (!deleted) {
+            throw new IllegalArgumentException("Failed to delete the object: " + fileName);
+        }
     }
 }

@@ -22,18 +22,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class HelpRequestService {
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-
-    private String helpRequestImageDir;
-    @PostConstruct
-    public void init() {
-        this.helpRequestImageDir = uploadDir + "help-request-images/";
-    }
     private final HelpRequestRepository helpRequestRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
-
+    private final GcsService gcsService;
 
     public List<HelpRequestDTO> getAllHelpRequests() {
         return helpRequestRepository.findAll().stream()
@@ -98,24 +90,18 @@ public class HelpRequestService {
         HelpRequestEntity request = helpRequestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("HelpRequest not found"));
 
+        // GCS에 업로드할 파일 이름 생성
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        File uploadPath = new File(helpRequestImageDir);
 
-        if(!uploadPath.exists()) {
-            boolean created = uploadPath.mkdirs();
-            if(!created) {
-                throw new IOException("Failed to create upload directory");
-            }
-        }
+        // GCS에 파일 업로드
+        String fileUri = gcsService.uploadFile(fileName, file.getBytes());
 
-        File destinationFile = new File(helpRequestImageDir + fileName);
-        file.transferTo(destinationFile);
 
         List<String> uris = request.getUri();
-        uris.add("/uploads/help-request-images/" + fileName);
+        uris.add(fileUri);
         request.setUri(uris);
 
-        return "/uploads/help-request-images/" + fileName;
+        return fileUri;
     }
 
     public void deleteHelpRequestImages(Long requestId, List<String> imageUris) throws IOException {
@@ -124,10 +110,11 @@ public class HelpRequestService {
 
         // 파일 삭제
         for (String imageUri: imageUris) {
-            String filePath = helpRequestImageDir + imageUri.replace("/uploads/help-request-images/", "");
-            File file = new File(filePath);
-            if (file.exists() && !file.delete()) {
-                throw new IOException("Failed to delete file: " + filePath);
+            String fileName = imageUri.substring(imageUri.lastIndexOf("/") + 1);
+            try {
+                gcsService.deleteFile(fileName);  // GCS에서 파일 삭제
+            } catch (Exception e) {
+                throw new IOException("Failed to delete file from GCS: " + fileName, e);
             }
         }
 

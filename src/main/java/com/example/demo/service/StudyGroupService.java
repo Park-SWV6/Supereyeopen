@@ -22,17 +22,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class StudyGroupService {
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-
-    private String groupImageDir;
-    @PostConstruct
-    public void init() {
-        this.groupImageDir = uploadDir + "group-images/";
-    }
-
     private final StudyGroupRepository studyGroupRepository;
     private final UserRepository userRepository;
+    private final GcsService gcsService;
 
     @Transactional
     public List<StudyGroupDTO> getAllGroups() {
@@ -169,23 +161,13 @@ public class StudyGroupService {
         StudyGroupEntity group = studyGroupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("StudyGroup not found"));
 
+        // GCS에 업로드할 파일 이름 생성
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        File uploadPath = new File(groupImageDir);
-        System.out.println("groupImageDir: " + groupImageDir);
-        System.out.println("uploadPath absolute path: " + uploadPath.getAbsolutePath());
 
-        if(!uploadPath.exists()) {
-            boolean created = uploadPath.mkdirs();
-            if(!created) {
-                System.out.println("Attempting to create directory: " + uploadPath.getAbsolutePath());
-                throw new IOException("Failed to create upload directory: " +  uploadDir);
-            }
-        }
+        // GCS에 파일 업로드
+        String fileUri = gcsService.uploadFile(fileName, file.getBytes());
 
-        File destinationFile =  new File(groupImageDir + fileName);
-        file.transferTo(destinationFile);
-
-        group.setImageUri("/uploads/group-images/" + fileName);
+        group.setImageUri(fileUri);
         studyGroupRepository.save(group);
 
         return group.getImageUri();
