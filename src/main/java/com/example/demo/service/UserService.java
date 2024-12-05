@@ -133,6 +133,17 @@ public class UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        // 기존 프로필 이미지 URI 삭제
+        String existingProfileImageUri = user.getProfileImageUri();
+        if (existingProfileImageUri != null && !existingProfileImageUri.isEmpty()) {
+            String existingFileName = existingProfileImageUri.substring(existingProfileImageUri.lastIndexOf("/") + 1);
+            try {
+                gcsService.deleteFile(existingFileName);  // 기존 파일 삭제
+            } catch (Exception e) {
+                throw new IOException("Failed to delete existing profile image: " + existingFileName, e);
+            }
+        }
+
         // GCS에 업로드할 파일 이름 생성
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
