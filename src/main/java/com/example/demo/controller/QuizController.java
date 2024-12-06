@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @RestController
@@ -63,7 +64,7 @@ public class QuizController {
         if (topQuizzes.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        QuizDTO randomQuiz = topQuizDTOs.get(new Random().nextInt(topQuizDTOs.size()));
+        QuizDTO randomQuiz = topQuizDTOs.get(ThreadLocalRandom.current().nextInt(topQuizDTOs.size()));
         return ResponseEntity.ok(randomQuiz);
     }
 
