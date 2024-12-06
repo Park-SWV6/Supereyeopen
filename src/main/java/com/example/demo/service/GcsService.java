@@ -37,15 +37,15 @@ public class GcsService {
         storage = StorageOptions.newBuilder().setCredentials(credentials).build().getService();
     }
 
-    public String uploadFile(String fileName, byte[] content) throws IOException {
-        BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, "profile-images/" + fileName).build();
+    public String uploadFile(String folder, String fileName, byte[] content) throws IOException {
+        BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, folder + "/" + fileName).build();
         storage.create(blobInfo, content);
-        return String.format("https://storage.googleapis.com/%s/profile-images/%s", bucketName, fileName);
+        return String.format("https://storage.googleapis.com/%s/$s/%s", bucketName, folder, fileName);
     }
 
     // 파일 삭제 메소드 추가
-    public void deleteFile(String fileName) {
-        BlobId blobId = BlobId.of(bucketName, "help-request-images/" + fileName);
+    public void deleteFile(String folder, String fileName) {
+        BlobId blobId = BlobId.of(bucketName, folder + "/" + fileName);
         boolean deleted = storage.delete(blobId);
         if (!deleted) {
             throw new IllegalArgumentException("Failed to delete the object: " + fileName);

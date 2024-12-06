@@ -5,8 +5,6 @@ import com.example.demo.entity.UserEntity;
 import com.example.demo.entity.VerificationCodeEntity;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.VerificationCodeRepository;
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
@@ -138,7 +135,7 @@ public class UserService {
         if (existingProfileImageUri != null && !existingProfileImageUri.isEmpty()) {
             String existingFileName = existingProfileImageUri.substring(existingProfileImageUri.lastIndexOf("/") + 1);
             try {
-                gcsService.deleteFile(existingFileName);  // 기존 파일 삭제
+                gcsService.deleteFile("profile-images", existingFileName);  // 기존 파일 삭제
             } catch (Exception e) {
                 throw new IOException("Failed to delete existing profile image: " + existingFileName, e);
             }
@@ -148,7 +145,7 @@ public class UserService {
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         // GCS에 파일 업로드
-        String fileUri = gcsService.uploadFile(fileName, file.getBytes());
+        String fileUri = gcsService.uploadFile("profile-images", fileName, file.getBytes());
 
         // Update user profileImageUri
         user.setProfileImageUri(fileUri);

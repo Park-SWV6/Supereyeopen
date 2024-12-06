@@ -6,14 +6,11 @@ import com.example.demo.entity.UserEntity;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.HelpRequestRepository;
 import com.example.demo.repository.UserRepository;
-import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -94,7 +91,7 @@ public class HelpRequestService {
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         // GCS에 파일 업로드
-        String fileUri = gcsService.uploadFile(fileName, file.getBytes());
+        String fileUri = gcsService.uploadFile("help-request-images", fileName, file.getBytes());
 
 
         List<String> uris = request.getUri();
@@ -112,7 +109,7 @@ public class HelpRequestService {
         for (String imageUri: imageUris) {
             String fileName = imageUri.substring(imageUri.lastIndexOf("/") + 1);
             try {
-                gcsService.deleteFile(fileName);  // GCS에서 파일 삭제
+                gcsService.deleteFile("help-request-images", fileName);  // GCS에서 파일 삭제
             } catch (Exception e) {
                 throw new IOException("Failed to delete file from GCS: " + fileName, e);
             }

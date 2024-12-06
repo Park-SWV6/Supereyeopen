@@ -6,14 +6,11 @@ import com.example.demo.entity.StudyGroupEntity;
 import com.example.demo.entity.UserEntity;
 import com.example.demo.repository.StudyGroupRepository;
 import com.example.demo.repository.UserRepository;
-import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -161,11 +158,22 @@ public class StudyGroupService {
         StudyGroupEntity group = studyGroupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("StudyGroup not found"));
 
+        // 기존 그룹 이미지 URI 삭제
+        String existingGroupImageUri = group.getImageUri();
+        if (existingGroupImageUri != null && !existingGroupImageUri.isEmpty()) {
+            String existingFileName = existingGroupImageUri.substring(existingGroupImageUri.lastIndexOf("/") + 1);
+            try {
+                gcsService.deleteFile("group-images", existingFileName);  // 기존 파일 삭제
+            } catch (Exception e) {
+                throw new IOException("Failed to delete existing StudyGroup image: " + existingFileName, e);
+            }
+        }
+
         // GCS에 업로드할 파일 이름 생성
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         // GCS에 파일 업로드
-        String fileUri = gcsService.uploadFile(fileName, file.getBytes());
+        String fileUri = gcsService.uploadFile("group-images", fileName, file.getBytes());
 
         group.setImageUri(fileUri);
         studyGroupRepository.save(group);
