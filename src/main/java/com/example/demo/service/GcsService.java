@@ -40,7 +40,7 @@ public class GcsService {
     public String uploadFile(String folder, String fileName, byte[] content) throws IOException {
         BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, folder + "/" + fileName).build();
         storage.create(blobInfo, content);
-        return String.format("https://storage.googleapis.com/%s/$s/%s", bucketName, folder, fileName);
+        return String.format("https://storage.googleapis.com/%s/%s/%s", bucketName, folder, fileName);
     }
 
     // 파일 삭제 메소드 추가
